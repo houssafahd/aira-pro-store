@@ -205,8 +205,7 @@ export default function AddProductPage() {
             </div>
             {uploading && <p className="text-xs text-orange-600 mt-1">جاري رفع الصورة للسحاب...</p>}
             {imageUrl && <p className="text-xs text-green-600 mt-1">✓ تم رفع الصورة بنجاح وجاهزة للحفظ</p>}
-          </div>
-          <button 
+            <button 
             type="submit"
             disabled={loading || uploading}
             className="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 rounded-lg transition text-sm mt-4 shadow"
