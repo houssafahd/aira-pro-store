@@ -1,142 +1,197 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams } from 'next/navigation';
-import { ShoppingCart, Truck, Package, ArrowRight, CheckCircle2, ShieldCheck, Wrench } from 'lucide-react';
+import { ShoppingCart, MessageCircle, QrCode, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { CONTACT_CONFIG } from '@/lib/contact-config';
 
-// قاعدة بيانات مصغرة لقطع غيار Aira Pro (لتجربة التفاصيل)
-const productsData: { [key: string]: any } = {
-  "1": {
-    id: 1,
-    name: 'HP LaserJet Pro M402 Fuser Film Sleeve (سليف سخان أصلي)',
-    brand: 'HP',
-    sku: 'RM2-5425',
-    priceRetail: 1200,
-    priceWholesale: 950,
-    moq: 5,
-    stock: 150,
-    image: '🔧',
-    description: 'سليف سخان عالي الجودة متوافق ومصمم خصيصاً لتحمل حرارة التشغيل العالية وطباعة آلاف الصفحات دون تمزق. استيراد مباشر من مصانع النخبة.',
-    compatibility: ['HP LaserJet Pro M402', 'M426', 'M203', 'M227'],
-    noteTip: '⚠️ تنبيه فني: يُنصح بشراء معجون التشحيم الحراري (Fuser Grease) مع هذا السليف لضمان الأداء المثالي وطول العمر الافتراضي.'
-  },
-  "2": {
-    id: 2,
-    name: 'Canon IR 2525/2530 Pick-up Roller Kit (طقم بكرات السحب)',
-    brand: 'Canon',
-    sku: 'FL3-1449',
-    priceRetail: 800,
-    priceWholesale: 650,
-    moq: 10,
-    stock: 320,
-    image: '⚙️',
-    description: 'أطقم بكرات سحب الورق الأصلية لمنع انحشار الورق وضمان سلاسة التغذية لآلات النسخ الثقيلة.',
-    compatibility: ['Canon imageRUNNER 2525', '2530', '2535', '2545'],
-    noteTip: '💡 نصيحة صيانة: قم بتنظيف بكرات الفصل (Separation Pad) عند تغيير هذا الطقم.'
-  }
-};
+interface Product {
+  id: number;
+  name: string;
+  brand: string;
+  category: string;
+  sku: string;
+  price_retail: number;
+  price_wholesale: number;
+  moq: number;
+  stock: number;
+  image: string;
+}
 
-export default function ProductDetailPage() {
+function ProductDetailContent() {
   const params = useParams();
-  const productId = (params?.id as string) || "1";
-  const product = productsData[productId] || productsData["1"];
+  const productId = params?.id ? String(params.id) : "1";
+  
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [activeQrModal, setActiveQrModal] = useState<'whatsapp' | 'wechat' | null>(null);
 
-  const [quantity, setQuantity] = useState(product.moq);
-  const activePrice = quantity >= product.moq ? product.priceWholesale : product.priceRetail;
-  const totalAmount = activePrice * quantity;
+  useEffect(() => {
+    async function fetchProduct() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', productId)
+          .single();
 
-  return (
-    <div className="min-h-screen bg-gray-100 text-gray-800 p-4 md:p-8" dir="rtl">
-      {/* زر العودة للمتجر */}
-      <div className="max-w-6xl mx-auto mb-6">
-        <Link href="/" className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm text-sm font-semibold text-gray-700 hover:text-orange-600 transition">
-          <ArrowRight className="w-4 h-4" />
-          <span>العودة إلى قائمة المنتجات (Aira Pro)</span>
+        if (error) {
+          console.error('Error fetching product:', error);
+        } else if (data) {
+          setProduct(data);
+          setQuantity(data.moq || 1);
+        }
+      } catch (err: unknown) {
+        console.error('Unexpected error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProduct();
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center" dir="rtl">
+        <p className="text-sm text-gray-500 font-medium">جاري تحميل تفاصيل القطعة...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8 text-center" dir="rtl">
+        <h1 className="text-lg font-bold text-gray-800 mb-4">القطعة غير متوفرة أو تم حذفها.</h1>
+        <Link href="/" className="bg-orange-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
+          العودة للكتالوج
         </Link>
       </div>
+    );
+  }
 
-      {/* بطاقة تفاصيل المنتج الرئيسية */}
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-8 p-6 md:p-10">
-        {/* قسم الصورة */}
-        <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-8 border">
-          <span className="text-8xl mb-4">{product.image}</span>
-          <span className="text-xs bg-orange-100 text-orange-800 font-mono px-3 py-1 rounded-full font-bold">SKU: {product.sku}</span>
+  const isWholesale = quantity >= product.moq;
+  const unitPrice = isWholesale ? product.price_wholesale : product.price_retail;
+  const totalPrice = unitPrice * quantity;
+
+  return (
+    <div className="min-h-screen bg-gray-100 text-gray-800" dir="rtl">
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-black">
+            <ArrowRight className="w-4 h-4" /> العودة للكتالوج الرئيسي
+          </Link>
+          <span className="text-xl font-black text-black font-[family-name:var(--font-audiowide)]">AIRA PRO</span>
         </div>
+      </header>
 
-        {/* قسم المعلومات والمواصفات */}
-        <div className="flex flex-col justify-between space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded font-bold">{product.brand}</span>
-              <span className="text-xs text-green-600 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4" /> متوفر بالمخزون ({product.stock} وحدة)
-              </span>
-            </div>
-            <h1 className="text-2xl font-black text-gray-900">{product.name}</h1>
-            <p className="text-sm text-gray-600 mt-3 leading-relaxed">{product.description}</p>
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="h-80 w-full bg-gray-50 rounded-xl border flex items-center justify-center overflow-hidden">
+            {product.image && typeof product.image === 'string' && product.image.trim().startsWith('http') ? (
+              <img src={product.image.trim()} alt={product.name} className="h-full w-full object-contain p-4" />
+            ) : (
+              <span className="text-6xl">{product.image || '📦'}</span>
+            )}
           </div>
 
-          {/* جدول الأسعار المتدرجة (Alibaba Style) */}
-          <div className="border rounded-xl p-4 bg-gray-50/50 space-y-2">
-            <h3 className="text-xs font-bold text-gray-700">نظام تسعير الجملة (B2B Tiers):</h3>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-white p-2 rounded border text-center">
-                <span className="block text-gray-400">التجزئة (أقل من {product.moq} قطع)</span>
-                <span className="font-bold text-gray-800 text-sm">{product.priceRetail} دج</span>
+          <div className="flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs bg-orange-100 text-orange-800 px-2.5 py-1 rounded-md font-bold">{product.category}</span>
+                <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md font-mono font-bold">SKU: {product.sku}</span>
               </div>
-              <div className="bg-orange-50 border-orange-200 p-2 rounded border text-center">
-                <span className="block text-orange-700">الجملة ({product.moq} قطع فأكثر)</span>
-                <span className="font-bold text-orange-600 text-sm">{product.priceWholesale} دج</span>
+              
+              <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              <p className="text-xs text-gray-500 mb-4">العلامة التجارية للطابعة: <span className="font-bold text-gray-700">{product.brand}</span></p>
+
+              <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-6 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-600">سعر التجزئة:</span>
+                  <span className="font-bold text-gray-900">{product.price_retail} دج</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-orange-800 font-medium">سعر الجملة (بداية من MOQ {product.moq}):</span>
+                  <span className="font-bold text-orange-700">{product.price_wholesale} دج</span>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-xs font-medium text-gray-700 mb-2">الكمية المطلوبة:</label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="number" 
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-24 border-2 border-gray-300 rounded-lg p-2 text-sm font-bold text-center focus:outline-none focus:border-orange-600"
+                  />
+                  <span className="text-xs text-gray-500">
+                    {isWholesale ? '🔥 تم تطبيق سعر الجملة' : `أضف ${product.moq - quantity > 0 ? product.moq - quantity : 0} قطع أخرى للحصول على سعر الجملة`}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 mb-6 flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-700">المبلغ الإجمالي:</span>
+                <span className="text-xl font-black text-orange-600">{totalPrice} دج</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button 
+                onClick={() => alert(`تمت إضافة ${quantity} وحدة إلى السلة بنجاح!`)}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 shadow"
+              >
+                <ShoppingCart className="w-4 h-4" /> إضافة إلى سلة الطلبات
+              </button>
+
+              <div className="grid grid-cols-2 gap-2">
+                <a 
+                  href={CONTACT_CONFIG.whatsappUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle className="w-4 h-4" /> طلب عبر واتساب
+                </a>
+                <button 
+                  onClick={() => setActiveQrModal('wechat')}
+                  className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5"
+                >
+                  <QrCode className="w-4 h-4" /> WeChat ID
+                </button>
               </div>
             </div>
           </div>
+        </div>
+      </main>
 
-          {/* اختيار الكمية والحساب */}
-          <div className="space-y-3 border-t pt-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">الكمية المطلوبة:</label>
-              <input 
-                type="number" 
-                min="1" 
-                value={quantity} 
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-24 border-2 border-orange-500 rounded-lg px-3 py-1.5 text-center font-bold focus:outline-none"
-              />
+      {activeQrModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative text-center" dir="rtl">
+            <h3 className="font-bold text-lg text-gray-800 mb-2">تواصل عبر WeChat</h3>
+            <div className="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-lg font-mono font-bold text-emerald-700 text-sm mb-4">
+              {CONTACT_CONFIG.wechatId}
             </div>
-            <div className="flex justify-between items-center bg-orange-50 p-3 rounded-lg">
-              <span className="text-xs text-gray-600 font-medium">المجموع الإجمالي للطلبية:</span>
-              <span className="text-xl font-black text-orange-600">{totalAmount} دج</span>
-            </div>
-
-            <button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
-              <ShoppingCart className="w-5 h-5" />
-              <span>إضافة الطلبية إلى السلة</span>
+            <button 
+              onClick={() => setActiveQrModal(null)}
+              className="w-full bg-gray-800 hover:bg-black text-white font-bold py-2 rounded-lg text-xs"
+            >
+              إغلاق
             </button>
           </div>
         </div>
-      </div>
-
-      {/* قسم توافقية الطابعات والنصائح الفنية (التمهيد للميزات الذكية) */}
-      <div className="max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border">
-          <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-orange-600" /> الطابعات المتوافقة (Compatibility Matrix)
-          </h3>
-          <ul className="space-y-2 text-sm">
-            {product.compatibility.map((model: string, idx: number) => (
-              <li key={idx} className="bg-gray-50 p-2 rounded border text-gray-700 font-medium flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                <span>{model}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-orange-50/60 p-6 rounded-2xl border border-orange-200">
-          <h3 className="font-bold text-orange-900 mb-2">💡 نصيحة خبير الصيانة (Aira Pro Tips):</h3>
-          <p className="text-sm text-orange-800 leading-relaxed">{product.noteTip}</p>
-        </div>
-      </div>
+      )}
     </div>
+  );
+}
+
+export default function ProductDetailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center"><p className="text-sm">جاري التحميل...</p></div>}>
+      <ProductDetailContent />
+    </Suspense>
   );
 }

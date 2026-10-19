@@ -1,197 +1,223 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
-import { useParams } from 'next/navigation';
-import { ShoppingCart, MessageCircle, Phone, Share2, QrCode, ArrowRight, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { CONTACT_CONFIG } from '@/lib/contact-config';
+import { useRouter } from 'next/navigation';
+import { PlusCircle, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
-interface Product {
-  id: number;
-  name: string;
-  brand: string;
-  category: string;
-  sku: string;
-  price_retail: number;
-  price_wholesale: number;
-  moq: number;
-  stock: number;
-  image: string;
-}
+export default function AddProductPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [brand, setBrand] = useState('HP');
+  const [category, setCategory] = useState('Fuser');
+  const [sku, setSku] = useState('');
+  const [priceRetail, setPriceRetail] = useState('');
+  const [priceWholesale, setPriceWholesale] = useState('');
+  const [moq, setMoq] = useState('5');
+  const [stock, setStock] = useState('100');
+  const [imageUrl, setImageUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
 
-function ProductDetailContent() {
-  const params = useParams();
-  const productId = params?.id ? String(params.id) : "1";
-  
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);
-  const [activeQrModal, setActiveQrModal] = useState<'whatsapp' | 'wechat' | null>(null);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  useEffect(() => {
-    async function fetchProduct() {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', productId)
-          .single();
+    try {
+      setUploading(true);
+      const fileName = `${Date.now()}-${file.name}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file);
 
-        if (error) {
-          console.error('Error fetching product:', error);
-        } else if (data) {
-          setProduct(data);
-          setQuantity(data.moq || 1);
-        }
-      } catch (err) {
-        console.error('Unexpected error:', err);
-      } finally {
-        setLoading(false);
-      }
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      setImageUrl(data.publicUrl);
+      alert('تم رفع الصورة بنجاح!');
+    } catch (error: unknown) {
+      const err = error as Error;
+      alert('خطأ أثناء رفع الصورة: ' + err.message);
+    } finally {
+      setUploading(false);
     }
-    fetchProduct();
-  }, [productId]);
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center" dir="rtl">
-        <p className="text-sm text-gray-500 font-medium">جاري تحميل تفاصيل القطعة...</p>
-      </div>
-    );
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !sku || !priceRetail || !priceWholesale) {
+      alert('يرجى ملء الحقول الأساسية!');
+      return;
+    }
 
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gray-100 p-8 text-center" dir="rtl">
-        <h1 className="text-lg font-bold text-gray-800 mb-4">القطعة غير متوفرة أو تم حذفها.</h1>
-        <Link href="/" className="bg-orange-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
-          العودة للكتالوج
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('products').insert([
+        {
+          name,
+          brand,
+          category,
+          sku,
+          price_retail: parseFloat(priceRetail),
+          price_wholesale: parseFloat(priceWholesale),
+          moq: parseInt(moq, 10),
+          stock: parseInt(stock, 10),
+          image: imageUrl || '📦',
+        },
+      ]);
+
+      if (error) throw error;
+
+      alert('تم إضافة قطعة الغيار بنجاح إلى المتجر!');
+      router.push('/');
+    } catch (error: unknown) {
+      const err = error as Error;
+      alert('خطأ أثناء الحفظ: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6 text-gray-800" dir="rtl">
+      <div className="max-w-2xl mx-auto mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-black">
+          <ArrowRight className="w-4 h-4" /> العودة إلى المتجر الرئيسي
         </Link>
       </div>
-    );
-  }
 
-  const isWholesale = quantity >= product.moq;
-  const unitPrice = isWholesale ? product.price_wholesale : product.price_retail;
-  const totalPrice = unitPrice * quantity;
+      <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+        <h1 className="text-xl font-bold mb-6 flex items-center gap-2 text-black">
+          <PlusCircle className="w-6 h-6 text-orange-600" /> إضافة قطعة غيار جديدة (Aira Pro)
+        </h1>
 
-  return (
-    <div className="min-h-screen bg-gray-100 text-gray-800" dir="rtl">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-black">
-            <ArrowRight className="w-4 h-4" /> العودة للكتالوج الرئيسي
-          </Link>
-          <span className="text-xl font-black text-black font-[family-name:var(--font-audiowide)]">AIRA PRO</span>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="h-80 w-full bg-gray-50 rounded-xl border flex items-center justify-center overflow-hidden">
-            {product.image && typeof product.image === 'string' && product.image.trim().startsWith('http') ? (
-              <img src={product.image.trim()} alt={product.name} className="h-full w-full object-contain p-4" />
-            ) : (
-              <span className="text-6xl">{product.image || '📦'}</span>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">اسم القطعة والمواصفات:</label>
+            <input 
+              type="text" 
+              required
+              value={name} 
+              onChange={(e) => setName(e.target.value)}
+              placeholder="مثال: HP LaserJet Pro M402 Fuser Film Sleeve" 
+              className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
+            />
           </div>
 
-          <div className="flex flex-col justify-between">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs bg-orange-100 text-orange-800 px-2.5 py-1 rounded-md font-bold">{product.category}</span>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md font-mono font-bold">SKU: {product.sku}</span>
-              </div>
-              
-              <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-xs text-gray-500 mb-4">العلامة التجارية للطابعة: <span className="font-bold text-gray-700">{product.brand}</span></p>
-
-              <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-6 space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-600">سعر التجزئة:</span>
-                  <span className="font-bold text-gray-900">{product.price_retail} دج</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-orange-800 font-medium">سعر الجملة (بداية من MOQ {product.moq}):</span>
-                  <span className="font-bold text-orange-700">{product.price_wholesale} دج</span>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-xs font-medium text-gray-700 mb-2">الكمية المطلوبة:</label>
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="number" 
-                    min="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-24 border-2 border-gray-300 rounded-lg p-2 text-sm font-bold text-center focus:outline-none focus:border-orange-600"
-                  />
-                  <span className="text-xs text-gray-500">
-                    {isWholesale ? '🔥 تم تطبيق سعر الجملة' : `أضف ${product.moq - quantity > 0 ? product.moq - quantity : 0} قطع أخرى للحصول على سعر الجملة`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="border-t pt-4 mb-6 flex justify-between items-center">
-                <span className="text-sm font-bold text-gray-700">المبلغ الإجمالي:</span>
-                <span className="text-xl font-black text-orange-600">{totalPrice} دج</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <button 
-                onClick={() => alert(`تمت إضافة ${quantity} وحدة إلى السلة بنجاح!`)}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 shadow"
+              <label className="block text-xs font-medium text-gray-700 mb-1">العلامة التجارية (Brand):</label>
+              <select 
+                value={brand} 
+                onChange={(e) => setBrand(e.target.value)}
+                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               >
-                <ShoppingCart className="w-4 h-4" /> إضافة إلى سلة الطلبات
-              </button>
-
-              <div className="grid grid-cols-2 gap-2">
-                <a 
-                  href={CONTACT_CONFIG.whatsappUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5"
-                >
-                  <MessageCircle className="w-4 h-4" /> طلب عبر واتساب
-                </a>
-                <button 
-                  onClick={() => setActiveQrModal('wechat')}
-                  className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5"
-                >
-                  <QrCode className="w-4 h-4" /> WeChat ID
-                </button>
-              </div>
+                {['HP', 'Canon', 'Kyocera', 'Epson', 'Brother', 'Xerox', 'Ricox'].map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">تصنيف القطعة (Category):</label>
+              <select 
+                value={category} 
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
+              >
+                <option value="Fuser">سخانات (Fuser)</option>
+                <option value="Drum">أسطوانات (Drum)</option>
+                <option value="Roller">بكرات سحب (Roller)</option>
+                <option value="Mechanical">ميكانيكي (Mechanical)</option>
+                <option value="Consumables">مستلزمات (Consumables)</option>
+              </select>
             </div>
           </div>
-        </div>
-      </main>
 
-      {activeQrModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative text-center" dir="rtl">
-            <h3 className="font-bold text-lg text-gray-800 mb-2">تواصل عبر WeChat</h3>
-            <div className="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-lg font-mono font-bold text-emerald-700 text-sm mb-4">
-              {CONTACT_CONFIG.wechatId}
-            </div>
-            <button 
-              onClick={() => setActiveQrModal(null)}
-              className="w-full bg-gray-800 hover:bg-black text-white font-bold py-2 rounded-lg text-xs"
-            >
-              إغلاق
-            </button>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">رقم القطعة (SKU / OEM Code):</label>
+            <input 
+              type="text" 
+              required
+              value={sku} 
+              onChange={(e) => setSku(e.target.value)}
+              placeholder="مثال: RM2-5425" 
+              className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black font-mono"
+            />
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">سعر التجزئة (دج):</label>
+              <input 
+                type="number" 
+                required
+                value={priceRetail} 
+                onChange={(e) => setPriceRetail(e.target.value)}
+                placeholder="1200" 
+                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">سعر الجملة (دج):</label>
+              <input 
+                type="number" 
+                required
+                value={priceWholesale} 
+                onChange={(e) => setPriceWholesale(e.target.value)}
+                placeholder="950" 
+                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">الحد الأدنى للجملة (MOQ):</label>
+              <input 
+                type="number" 
+                value={moq} 
+                onChange={(e) => setMoq(e.target.value)}
+                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">الكمية المتوفرة (Stock):</label>
+              <input 
+                type="number" 
+                value={stock} 
+                onChange={(e) => setStock(e.target.value)}
+                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">صورة قطعة الغيار من الحاسوب:</label>
+            <div className="flex items-center gap-4">
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full border rounded-lg p-2 text-xs file:bg-black file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:cursor-pointer"
+              />
+            </div>
+            {uploading && <p className="text-xs text-orange-600 mt-1">جاري رفع الصورة للسحاب...</p>}
+            {imageUrl && <p className="text-xs text-green-600 mt-1">✓ تم رفع الصورة بنجاح وجاهزة للحفظ</p>}
+          </div>
+
+          <button 
+            type="submit"
+            disabled={loading || uploading}
+            className="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 rounded-lg transition text-sm mt-4 shadow"
+          >
+            {loading ? 'جاري الحفظ...' : 'حفظ ونشر القطعة في المتجر'}
+          </button>
+        </form>
+      </div>
     </div>
-  );
-}
-
-export default function ProductDetailPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center"><p className="text-sm">جاري التحميل...</p></div>}>
-      <ProductDetailContent />
-    </Suspense>
   );
 }
