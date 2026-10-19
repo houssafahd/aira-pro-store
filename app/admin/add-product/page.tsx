@@ -206,7 +206,6 @@ export default function AddProductPage() {
             {uploading && <p className="text-xs text-orange-600 mt-1">جاري رفع الصورة للسحاب...</p>}
             {imageUrl && <p className="text-xs text-green-600 mt-1">✓ تم رفع الصورة بنجاح وجاهزة للحفظ</p>}
           </div>
-
           <button 
             type="submit"
             disabled={loading || uploading}
