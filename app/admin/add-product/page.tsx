@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -26,7 +27,7 @@ export default function AddProductPage() {
     try {
       setUploading(true);
       const fileName = `${Date.now()}-${file.name}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(fileName, file);
@@ -49,6 +50,7 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!name || !sku || !priceRetail || !priceWholesale) {
       alert('يرجى ملء الحقول الأساسية!');
       return;
@@ -56,6 +58,7 @@ export default function AddProductPage() {
 
     try {
       setLoading(true);
+
       const { error } = await supabase.from('products').insert([
         {
           name,
@@ -85,7 +88,10 @@ export default function AddProductPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-gray-800" dir="rtl">
       <div className="max-w-2xl mx-auto mb-6">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-black">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-black"
+        >
           <ArrowRight className="w-4 h-4" /> العودة إلى المتجر الرئيسي
         </Link>
       </div>
@@ -97,34 +103,43 @@ export default function AddProductPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">اسم القطعة والمواصفات:</label>
-            <input 
-              type="text" 
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              اسم القطعة والمواصفات:
+            </label>
+            <input
+              type="text"
               required
-              value={name} 
+              value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="مثال: HP LaserJet Pro M402 Fuser Film Sleeve" 
+              placeholder="مثال: HP LaserJet Pro M402 Fuser Film Sleeve"
               className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">العلامة التجارية (Brand):</label>
-              <select 
-                value={brand} 
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                العلامة التجارية (Brand):
+              </label>
+              <select
+                value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               >
-                {['HP', 'Canon', 'Kyocera', 'Epson', 'Brother', 'Xerox', 'Ricoh'].map(b => (
-                  <option key={b} value={b}>{b}</option>
+                {['HP', 'Canon', 'Kyocera', 'Epson', 'Brother', 'Xerox', 'Ricoh'].map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
                 ))}
               </select>
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">تصنيف القطعة (Category):</label>
-              <select 
-                value={category} 
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                تصنيف القطعة (Category):
+              </label>
+              <select
+                value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               >
@@ -138,37 +153,44 @@ export default function AddProductPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">رقم القطعة (SKU / OEM Code):</label>
-            <input 
-              type="text" 
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              رقم القطعة (SKU / OEM Code):
+            </label>
+            <input
+              type="text"
               required
-              value={sku} 
+              value={sku}
               onChange={(e) => setSku(e.target.value)}
-              placeholder="مثال: RM2-5425" 
+              placeholder="مثال: RM2-5425"
               className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black font-mono"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">سعر التجزئة (دج):</label>
-              <input 
-                type="number" 
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                سعر التجزئة (دج):
+              </label>
+              <input
+                type="number"
                 required
-                value={priceRetail} 
+                value={priceRetail}
                 onChange={(e) => setPriceRetail(e.target.value)}
-                placeholder="1200" 
+                placeholder="1200"
                 className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">سعر الجملة (دج):</label>
-              <input 
-                type="number" 
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                سعر الجملة (دج):
+              </label>
+              <input
+                type="number"
                 required
-                value={priceWholesale} 
+                value={priceWholesale}
                 onChange={(e) => setPriceWholesale(e.target.value)}
-                placeholder="950" 
+                placeholder="950"
                 className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               />
             </div>
@@ -176,19 +198,24 @@ export default function AddProductPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">الحد الأدنى للجملة (MOQ):</label>
-              <input 
-                type="number" 
-                value={moq} 
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                الحد الأدنى للجملة (MOQ):
+              </label>
+              <input
+                type="number"
+                value={moq}
                 onChange={(e) => setMoq(e.target.value)}
                 className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">الكمية المتوفرة (Stock):</label>
-              <input 
-                type="number" 
-                value={stock} 
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                الكمية المتوفرة (Stock):
+              </label>
+              <input
+                type="number"
+                value={stock}
                 onChange={(e) => setStock(e.target.value)}
                 className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               />
@@ -196,20 +223,26 @@ export default function AddProductPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">صورة قطعة الغيار من الحاسوب:</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              صورة قطعة الغيار من الحاسوب:
+            </label>
             <div className="flex items-center gap-4">
-              <input 
-                type="file" 
+              <input
+                type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="w-full border rounded-lg p-2 text-xs file:bg-black file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:cursor-pointer"
               />
             </div>
-            {uploading && <p className="text-xs text-orange-600 mt-1">جاري رفع الصورة للسحاب...</p>}
-            {imageUrl && <p className="text-xs text-green-600 mt-1">✓ تم رفع الصورة بنجاح وجاهزة للحفظ</p>}
+            {uploading && (
+              <p className="text-xs text-orange-600 mt-1">جاري رفع الصورة للسحاب...</p>
+            )}
+            {imageUrl && (
+              <p className="text-xs text-green-600 mt-1">✓ تم رفع الصورة بنجاح وجاهزة للحفظ</p>
+            )}
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={loading || uploading}
             className="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 rounded-lg transition text-sm mt-4 shadow"
