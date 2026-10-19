@@ -116,7 +116,7 @@ export default function AddProductPage() {
                 onChange={(e) => setBrand(e.target.value)}
                 className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
               >
-                {['HP', 'Canon', 'Kyocera', 'Epson', 'Brother', 'Xerox', 'Ricox'].map(b => (
+                {['HP', 'Canon', 'Kyocera', 'Epson', 'Brother', 'Xerox', 'Ricoh'].map(b => (
                   <option key={b} value={b}>{b}</option>
                 ))}
               </select>
