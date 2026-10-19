@@ -234,17 +234,15 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-4 gap-6">
         
-        {/* القائمة الجانبية مع إغلاق تلقائي عند ابتعاد الفأرة onMouseLeave */}
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             
             <div className="font-extrabold text-gray-900 border-b pb-2 mb-3 text-sm flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-orange-600" /> التصنيفات
+                <Layers className="w-4 h-4 text-orange-600"/> التصنيفات
               </span>
             </div>
 
-            {/* قسم نوع القطعة مع تفعيل onMouseEnter و onMouseLeave للإغلاق التلقائي */}
             <div 
               className="mb-3 border-b pb-3"
               onMouseEnter={() => setIsCategoriesOpen(true)}
@@ -255,7 +253,7 @@ export default function Home() {
                 className="flex items-center justify-between text-xs font-bold text-gray-700 cursor-pointer p-2 hover:bg-orange-50 rounded-lg transition select-none"
               >
                 <span className="flex items-center gap-1">
-                  <Tag className="w-3.5 h-3.5 text-orange-500" /> نوع القطعة
+                  <Tag className="w-3.5 h-3.5 text-orange-500"/> نوع القطعة
                 </span>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''}`} />
               </div>
@@ -275,7 +273,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* قسم نوع الطابعة مع تفعيل onMouseEnter و onMouseLeave للإغلاق التلقائي */}
             <div 
               onMouseEnter={() => setIsBrandsOpen(true)}
               onMouseLeave={() => setIsBrandsOpen(false)}
@@ -285,7 +282,7 @@ export default function Home() {
                 className="flex items-center justify-between text-xs font-bold text-gray-700 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition select-none"
               >
                 <span className="flex items-center gap-1">
-                  <Printer className="w-3.5 h-3.5 text-orange-500" /> نوع الطابعة (Brand)
+                  <Printer className="w-3.5 h-3.5 text-orange-500"/> نوع الطابعة (Brand)
                 </span>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isBrandsOpen ? 'rotate-180' : ''}`} />
               </div>
@@ -315,7 +312,6 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* شبكة المنتجات */}
         <section className="md:col-span-3">
           <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex justify-between items-center">
             <span className="text-sm text-gray-500">عرض {filteredProducts.length} منتج</span>
@@ -372,7 +368,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* نافذة الاتصال */}
       {isContactOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" dir="rtl">
@@ -400,7 +395,7 @@ export default function Home() {
                   onClick={() => setActiveQrModal('whatsapp')}
                   className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg border border-green-200 transition"
                 >
-                  <QrCode className="w-4 h-4" /> QR Code
+                  <QrCode className="w-4 h-4"/> QR Code
                 </button>
               </div>
 
@@ -418,7 +413,7 @@ export default function Home() {
                   onClick={() => setActiveQrModal('wechat')}
                   className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition"
                 >
-                  <QrCode className="w-4 h-4" /> QR Code
+                  <QrCode className="w-4 h-4"/> QR Code
                 </button>
               </div>
 
@@ -451,7 +446,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* نافذة QR Code */}
       {activeQrModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative text-center" dir="rtl">
@@ -495,7 +489,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* سلة المشتريات */}
       {isCartOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
           <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6">
@@ -560,7 +553,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* نافذة الشحن */}
       {isShippingOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
@@ -600,7 +592,9 @@ export default function Home() {
                   </button>
                   <button 
                     type="button"
-                    onClick={() => setShippingType('desk')}
+                    onClick={() => {
+                      setShippingType('desk');
+                    }}
                     className={`p-2 rounded-lg border text-xs font-semibold transition ${shippingType === 'desk' ? 'border-orange-600 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600'}`}
                   >
                     للمكتب (Stop Desk)
