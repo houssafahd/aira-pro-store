@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Upload, PlusCircle, ArrowRight } from 'lucide-react';
+import { PlusCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AddProductPage() {
@@ -10,6 +10,7 @@ export default function AddProductPage() {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('HP');
+  const [category, setCategory] = useState('Fuser');
   const [sku, setSku] = useState('');
   const [priceRetail, setPriceRetail] = useState('');
   const [priceWholesale, setPriceWholesale] = useState('');
@@ -18,7 +19,6 @@ export default function AddProductPage() {
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
 
-  // دالة رفع الصورة من الحاسوب إلى Supabase Storage
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -27,14 +27,12 @@ export default function AddProductPage() {
       setUploading(true);
       const fileName = `${Date.now()}-${file.name}`;
       
-      // رفع الصورة إلى مجلد product-images
       const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // جلب الرابط العام للصورة
       const { data } = supabase.storage
         .from('product-images')
         .getPublicUrl(fileName);
@@ -48,7 +46,6 @@ export default function AddProductPage() {
     }
   };
 
-  // دالة حفظ المنتج بالكامل في جدول products
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !sku || !priceRetail || !priceWholesale) {
@@ -62,6 +59,7 @@ export default function AddProductPage() {
         {
           name,
           brand,
+          category,
           sku,
           price_retail: parseFloat(priceRetail),
           price_wholesale: parseFloat(priceWholesale),
@@ -122,16 +120,31 @@ export default function AddProductPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">رقم القطعة (SKU / OEM Code):</label>
-              <input 
-                type="text" 
-                required
-                value={sku} 
-                onChange={(e) => setSku(e.target.value)}
-                placeholder="مثال: RM2-5425" 
-                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black font-mono"
-              />
+              <label className="block text-xs font-medium text-gray-700 mb-1">تصنيف القطعة (Category):</label>
+              <select 
+                value={category} 
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black"
+              >
+                <option value="Fuser">سخانات (Fuser)</option>
+                <option value="Drum">أسطوانات (Drum)</option>
+                <option value="Roller">بكرات سحب (Roller)</option>
+                <option value="Mechanical">ميكانيكي (Mechanical)</option>
+                <option value="Consumables">مستلزمات (Consumables)</option>
+              </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">رقم القطعة (SKU / OEM Code):</label>
+            <input 
+              type="text" 
+              required
+              value={sku} 
+              onChange={(e) => setSku(e.target.value)}
+              placeholder="مثال: RM2-5425" 
+              className="w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:border-black font-mono"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -180,7 +193,6 @@ export default function AddProductPage() {
             </div>
           </div>
 
-          {/* رفع الصورة من الحاسوب */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">صورة قطعة الغيار من الحاسوب:</label>
             <div className="flex items-center gap-4">
