@@ -100,8 +100,9 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedBrand, setSelectedBrand] = useState('All');
   
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
-  const [isBrandsOpen, setIsBrandsOpen] = useState(true);
+  // جعل القوائم مغلقة افتراضياً ولا تفتح إلا عند المرور أو النقر
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isBrandsOpen, setIsBrandsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -173,7 +174,6 @@ export default function Home() {
       <header className="bg-white shadow-sm sticky top-0 z-40 w-full overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
           
-          {/* الشعار وزر القائمة للجوال */}
           <div className="w-full md:w-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl sm:text-2xl font-black text-black tracking-wider font-[family-name:var(--font-audiowide)]">
@@ -191,7 +191,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* شريط البحث */}
           <div className="w-full md:flex-1 max-w-2xl flex">
             <input 
               type="text" 
@@ -205,7 +204,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* الأزرار العلوية للشاشات الكبيرة */}
           <div className="hidden md:flex items-center gap-2">
             <Link className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-orange-600 transition bg-gray-50 px-3 py-2 rounded-lg border border-gray-200" href="/">
               <Package className="w-4 h-4 text-orange-600"/>
@@ -247,7 +245,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* أزرار سريعة مصغرة خاصة بالهاتف مرتبة داخل الشاشة تماماً */}
           <div className="flex md:hidden items-center justify-between w-full gap-1 pt-1 border-t">
             <Link className="flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-gray-700 bg-gray-50 py-1.5 rounded border" href="/">
               <Package className="w-3.5 h-3.5 text-orange-600"/> الكتالوج
@@ -274,18 +271,23 @@ export default function Home() {
       {/* المحتوى الرئيسي */}
       <main className="max-w-7xl mx-auto px-4 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        {/* الشريط الجانبي للتصنيفات */}
+        {/* الشريط الجانبي (التصنيفات والفلترة) */}
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             
+            {/* عنوان قوي: منتجاتنا المعتمدة */}
             <div className="font-extrabold text-gray-900 border-b pb-2 mb-3 text-sm flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-orange-600"/> التصنيفات والفلترة
+                <Layers className="w-4 h-4 text-orange-600"/> منتجاتنا المعتمدة
               </span>
             </div>
 
-            {/* تصنيفات القطع */}
-            <div className="mb-4 border-b pb-3">
+            {/* تصنيفات القطع (تفتح عند المرور أو النقر) */}
+            <div 
+              className="mb-4 border-b pb-3"
+              onMouseEnter={() => setIsCategoriesOpen(true)}
+              onMouseLeave={() => setIsCategoriesOpen(false)}
+            >
               <div 
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
                 className="flex items-center justify-between text-xs font-bold text-gray-700 cursor-pointer p-2 hover:bg-orange-50 rounded-lg transition select-none"
@@ -297,7 +299,7 @@ export default function Home() {
               </div>
 
               {isCategoriesOpen && (
-                <ul className="space-y-1 text-xs mt-2 pr-2">
+                <ul className="space-y-1 text-xs mt-2 pr-2 animate-fadeIn">
                   {categoriesList.map((cat) => (
                     <li 
                       key={cat.id} 
@@ -311,8 +313,11 @@ export default function Home() {
               )}
             </div>
 
-            {/* ماركات الطابعات */}
-            <div>
+            {/* ماركات الطابعات (تفتح عند المرور أو النقر) */}
+            <div
+              onMouseEnter={() => setIsBrandsOpen(true)}
+              onMouseLeave={() => setIsBrandsOpen(false)}
+            >
               <div 
                 onClick={() => setIsBrandsOpen(!isBrandsOpen)}
                 className="flex items-center justify-between text-xs font-bold text-gray-700 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition select-none"
@@ -324,7 +329,7 @@ export default function Home() {
               </div>
 
               {isBrandsOpen && (
-                <ul className="space-y-1 text-xs mt-2 pr-2">
+                <ul className="space-y-1 text-xs mt-2 pr-2 animate-fadeIn">
                   <li 
                     onClick={() => setSelectedBrand('All')}
                     className={`p-1.5 rounded-lg cursor-pointer font-medium transition ${selectedBrand === 'All' ? 'bg-black text-white font-bold' : 'hover:bg-gray-50 text-gray-600'}`}
@@ -405,7 +410,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* نافذة الاتصال */}
+      {/* نوافذ الحوار (اتصال، شحن، سلة، QR) كما هي */}
       {isContactOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" dir="rtl">
@@ -484,7 +489,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* نافذة QR Code */}
       {activeQrModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative text-center" dir="rtl">
@@ -528,7 +532,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* سلة الطلبات */}
       {isCartOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
           <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-4 sm:p-6">
@@ -593,7 +596,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* نافذة الشحن */}
       {isShippingOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
@@ -625,6 +627,7 @@ export default function Home() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">نوع التوصيل:</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
+                    type="button"
                     type="button"
                     onClick={() => setShippingType('home')}
                     className={`p-2 rounded-lg border text-xs font-semibold transition ${shippingType === 'home' ? 'border-orange-600 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600'}`}
