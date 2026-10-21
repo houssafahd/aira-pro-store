@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Search, Package, Truck, ChevronRight, X, ShoppingCart, Trash2, MessageCircle, Phone, Share2, QrCode, Layers, Printer, Tag, ChevronDown, Menu } from 'lucide-react';
+import { Search, Package, Truck, X, ShoppingCart, Trash2, MessageCircle, Phone, Share2, QrCode, Layers, Printer, Tag, ChevronDown, Menu, FileText, CheckCircle2, ChevronRight, Info } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { CONTACT_CONFIG } from '@/lib/contact-config';
@@ -100,7 +100,6 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedBrand, setSelectedBrand] = useState('All');
   
-  // جعل القوائم مغلقة افتراضياً ولا تفتح إلا عند المرور أو النقر
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isBrandsOpen, setIsBrandsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -112,6 +111,13 @@ export default function Home() {
   const [activeQrModal, setActiveQrModal] = useState<'whatsapp' | 'wechat' | null>(null);
   const [selectedWilaya, setSelectedWilaya] = useState(wilayas[18]);
   const [shippingType, setShippingType] = useState<'home' | 'desk'>('home');
+
+  // نظام الإشعارات والتفاصيل
+  const [notification, setNotification] = useState<{show: boolean, product: Product | null, showDetails: boolean}>({
+    show: false,
+    product: null,
+    showDetails: false
+  });
 
   useEffect(() => {
     async function fetchProducts() {
@@ -127,7 +133,7 @@ export default function Home() {
 
   const currentFee = shippingType === 'home' ? selectedWilaya.homeFee : selectedWilaya.deskFee;
 
-  const addToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, buyNow: boolean = false) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === product.id);
       if (existingItem) {
@@ -135,9 +141,21 @@ export default function Home() {
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...prevCart, { ...product, quantity: product.moq }];
+      // إضافة الكمية الافتراضية كحد أدنى أو 1
+      const initialQty = product.moq > 0 ? product.moq : 1;
+      return [...prevCart, { ...product, quantity: initialQty }];
     });
-    setIsCartOpen(true);
+
+    if (buyNow) {
+      // فتح نافذة الإشعار بتفاصيل الشراء مباشرة
+      setNotification({ show: true, product, showDetails: true });
+    } else {
+      // إظهار إشعار الإضافة البسيط
+      setNotification({ show: true, product, showDetails: false });
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }));
+      }, 3000); // يختفي بعد 3 ثواني
+    }
   };
 
   const removeFromCart = (id: number) => {
@@ -165,6 +183,73 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 relative overflow-x-hidden" dir="rtl">
+      
+      {/* إشعار التأكيد وتفاصيل الشراء (Smart Toast/Modal) */}
+      {notification.show && notification.product && (
+        <div className="fixed top-20 left-0 right-0 z-50 flex justify-center px-4 animate-fadeIn">
+          <div className="bg-white p-4 rounded-2xl shadow-2xl border border-green-200 w-full max-w-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-2 h-full bg-green-500"></div>
+            
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <h4 className="font-bold text-gray-900 text-sm">تمت الإضافة بنجاح!</h4>
+              </div>
+              <button onClick={() => setNotification({ show: false, product: null, showDetails: false })} className="text-gray-400 hover:text-gray-700">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <p className="text-xs text-gray-600 mb-3 pr-7 line-clamp-1">{notification.product.name}</p>
+            
+            {!notification.showDetails ? (
+              <div className="flex items-center gap-2 pl-2">
+                <button 
+                  onClick={() => setNotification(prev => ({ ...prev, showDetails: true }))}
+                  className="text-xs font-bold text-orange-600 hover:text-orange-800 bg-orange-50 px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
+                >
+                  <Info className="w-3.5 h-3.5" /> عرض التفاصيل الدقيقة
+                </button>
+                <button 
+                  onClick={() => { setNotification({ show: false, product: null, showDetails: false }); setIsCartOpen(true); }}
+                  className="text-xs font-bold text-white bg-gray-900 hover:bg-black px-3 py-1.5 rounded-lg transition"
+                >
+                  الذهاب للسلة
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3 bg-gray-50 border rounded-xl p-3 text-xs space-y-2 animate-fadeIn">
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-gray-500">سعر الوحدة (حسب الكمية):</span>
+                  <span className="font-bold">{notification.product.moq > 1 ? notification.product.price_wholesale : notification.product.price_retail} دج</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-gray-500">الكمية المبدئية:</span>
+                  <span className="font-bold">{notification.product.moq > 0 ? notification.product.moq : 1} قطع</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-gray-500">تكلفة الشحن لولاية ({selectedWilaya.name}):</span>
+                  <span className="font-bold text-orange-600">+{currentFee} دج</span>
+                </div>
+                <div className="flex justify-between pt-1">
+                  <span className="font-extrabold text-gray-900">المبلغ الإجمالي التقريبي:</span>
+                  <span className="font-black text-green-700 text-sm">
+                    {((notification.product.moq > 0 ? notification.product.moq : 1) * (notification.product.moq > 1 ? notification.product.price_wholesale : notification.product.price_retail)) + currentFee} دج
+                  </span>
+                </div>
+                <p className="text-[9px] text-gray-400 mt-2 text-center">*الشفافية التامة: يمكنك تعديل الكميات أو الوجهة من داخل السلة لتحديث المجموع.</p>
+                <button 
+                  onClick={() => { setNotification({ show: false, product: null, showDetails: false }); setIsCartOpen(true); }}
+                  className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg transition shadow-sm"
+                >
+                  تأكيد الذهاب للسلة
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* شريط الإعلانات العلوي */}
       <div className="bg-orange-600 text-white text-[11px] sm:text-xs py-2 px-3 text-center font-medium leading-relaxed">
         متجر Aira Pro - العلمة: توزيع قطع غيار ومستلزمات الطابعات لكافة ولايات الوطن (58 ولاية).
@@ -185,7 +270,6 @@ export default function Home() {
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition"
-              aria-label="القائمة"
             >
               <Menu className="w-5 h-5"/>
             </button>
@@ -210,10 +294,17 @@ export default function Home() {
               <span>الكتالوج</span>
             </Link>
 
-            <Link className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-orange-600 transition bg-gray-50 px-3 py-2 rounded-lg border border-gray-200" href="/inventory">
-              <Package className="w-4 h-4 text-orange-600"/>
-              <span>المخزون</span>
-            </Link>
+            {/* تم حذف زر المخزون من هنا */}
+
+            <button 
+              onClick={() => {
+                alert("سيتم توفير ملف PDF جاهز للتحميل قريباً يحتوي على أسعار الجملة للوكلاء.");
+              }}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-orange-600 transition bg-orange-50 px-3 py-2 rounded-lg border border-orange-200"
+            >
+              <FileText className="w-4 h-4 text-orange-600"/>
+              <span>تحميل الأسعار</span>
+            </button>
             
             <button 
               onClick={() => setIsShippingOpen(true)}
@@ -233,12 +324,12 @@ export default function Home() {
 
             <button 
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg transition relative shadow"
+              className="flex items-center gap-1.5 text-xs font-bold text-white bg-gray-900 hover:bg-black px-4 py-2 rounded-lg transition relative shadow"
             >
               <ShoppingCart className="w-4 h-4"/>
               <span>السلة</span>
               {totalItemsCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-teal-900 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-2 -right-2 bg-orange-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
                   {totalItemsCount}
                 </span>
               )}
@@ -255,10 +346,10 @@ export default function Home() {
             <button onClick={() => setIsContactOpen(true)} className="flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-gray-700 bg-gray-50 py-1.5 rounded border">
               <Phone className="w-3.5 h-3.5 text-green-600"/> اتصل
             </button>
-            <button onClick={() => setIsCartOpen(true)} className="flex-1 flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-orange-600 py-1.5 rounded relative">
+            <button onClick={() => setIsCartOpen(true)} className="flex-1 flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-gray-900 py-1.5 rounded relative">
               <ShoppingCart className="w-3.5 h-3.5"/> السلة
               {totalItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-teal-900 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
                   {totalItemsCount}
                 </span>
               )}
@@ -275,14 +366,12 @@ export default function Home() {
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             
-            {/* عنوان قوي: منتجاتنا المعتمدة */}
             <div className="font-extrabold text-gray-900 border-b pb-2 mb-3 text-sm flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-orange-600"/> منتجاتنا المعتمدة
               </span>
             </div>
 
-            {/* تصنيفات القطع (تفتح عند المرور أو النقر) */}
             <div 
               className="mb-4 border-b pb-3"
               onMouseEnter={() => setIsCategoriesOpen(true)}
@@ -313,7 +402,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* ماركات الطابعات (تفتح عند المرور أو النقر) */}
             <div
               onMouseEnter={() => setIsBrandsOpen(true)}
               onMouseLeave={() => setIsBrandsOpen(false)}
@@ -367,9 +455,9 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col justify-between hover:shadow-md transition">
+                <div key={product.id} className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between hover:shadow-md transition">
                   <div>
-                    <div className="h-40 w-full bg-gray-50 rounded-md mb-3 flex items-center justify-center overflow-hidden border">
+                    <div className="h-40 w-full bg-gray-50 rounded-lg mb-3 flex items-center justify-center overflow-hidden border">
                       {product.image && typeof product.image === 'string' && product.image.trim().startsWith('http') ? (
                         <img src={product.image.trim()} alt={product.name} className="h-full w-full object-contain p-2" />
                       ) : (
@@ -381,27 +469,38 @@ export default function Home() {
                       <span className="text-[10px] bg-orange-100 text-orange-800 px-2 py-0.5 rounded font-bold">{product.category || 'General'}</span>
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono font-bold">SKU: {product.sku}</span>
                     </div>
-                    <h3 className="font-semibold text-xs sm:text-sm mt-2 text-gray-800 line-clamp-2">{product.name}</h3>
+                    <h3 className="font-semibold text-xs sm:text-sm mt-2 text-gray-800 line-clamp-2 leading-relaxed">{product.name}</h3>
                     <div className="mt-3 space-y-1">
                       <div className="flex justify-between text-xs">
                         <span className="font-bold text-gray-800">{product.price_retail} دج</span>
                         <span className="text-gray-500">التجزئة:</span>
                       </div>
-                      <div className="flex justify-between text-xs bg-orange-50 p-1 rounded">
+                      <div className="flex justify-between text-xs bg-orange-50 p-1.5 rounded">
                         <span className="font-bold text-orange-700">{product.price_wholesale} دج</span>
-                        <span className="text-orange-800 font-medium">الجملة (MOQ: {product.moq}+):</span>
+                        <span className="text-orange-800 font-medium">الجملة (MOQ: {product.moq}):</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t flex items-center justify-between">
-                    <button 
-                      onClick={() => addToCart(product)}
-                      className="bg-orange-600 text-white text-xs px-3 py-2 rounded hover:bg-orange-700 font-bold transition"
-                    >
-                      إضافة للسلة
-                    </button>
-                    <span className="text-xs text-green-600 font-semibold">متوفر ({product.stock})</span>
+                  <div className="mt-4 pt-3 border-t">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded">متوفر ({product.stock})</span>
+                    </div>
+                    {/* أزرار الإضافة والشراء السريع */}
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleAddToCart(product, false)}
+                        className="flex-1 bg-gray-100 text-gray-800 hover:bg-gray-200 text-xs px-2 py-2.5 rounded-lg font-bold transition flex justify-center items-center gap-1 border border-gray-200"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5" /> إضافة
+                      </button>
+                      <button 
+                        onClick={() => handleAddToCart(product, true)}
+                        className="flex-1 bg-orange-600 text-white hover:bg-orange-700 text-xs px-2 py-2.5 rounded-lg font-bold transition shadow-sm"
+                      >
+                        شراء الآن
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -410,7 +509,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* نوافذ الحوار (اتصال، شحن، سلة، QR) كما هي */}
+      {/* نوافذ الحوار (اتصال، شحن، سلة، QR) */}
       {isContactOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" dir="rtl">
@@ -586,9 +685,9 @@ export default function Home() {
                 </div>
                 <button 
                   onClick={() => { alert('تم تسجيل الطلب بنجاح.'); setCart([]); setIsCartOpen(false); }}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition text-xs sm:text-sm shadow"
+                  className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 rounded-lg transition text-xs sm:text-sm shadow"
                 >
-                  إتمام الطلب
+                  إتمام الشراء الآن
                 </button>
               </div>
             )}
@@ -627,7 +726,6 @@ export default function Home() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">نوع التوصيل:</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
-                    type="button"
                     type="button"
                     onClick={() => setShippingType('home')}
                     className={`p-2 rounded-lg border text-xs font-semibold transition ${shippingType === 'home' ? 'border-orange-600 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600'}`}
