@@ -14,6 +14,12 @@ export const metadata: Metadata = {
   description: "الإمبراطورية التجارية لتوزيع قطع غيار الطابعات في العلمة",
 };
 
+// إعداد التجاوب مع شاشات الهواتف والأجهزة الذكية
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

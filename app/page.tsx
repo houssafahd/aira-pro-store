@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Search, Package, Truck, ChevronRight, X, ShoppingCart, Trash2, MessageCircle, Phone, Share2, QrCode, Layers, Printer, Tag, ChevronDown } from 'lucide-react';
+import { Search, Package, Truck, ChevronRight, X, ShoppingCart, Trash2, MessageCircle, Phone, Share2, QrCode, Layers, Printer, Tag, ChevronDown, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { CONTACT_CONFIG } from '@/lib/contact-config';
@@ -100,8 +100,9 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedBrand, setSelectedBrand] = useState('All');
   
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-  const [isBrandsOpen, setIsBrandsOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
+  const [isBrandsOpen, setIsBrandsOpen] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -162,34 +163,50 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-800 relative" dir="rtl">
-      <div className="bg-orange-600 text-white text-xs py-1.5 px-4 text-center font-medium">
+    <div className="min-h-screen bg-gray-100 text-gray-800 relative overflow-x-hidden" dir="rtl">
+      {/* شريط الإعلانات العلوي */}
+      <div className="bg-orange-600 text-white text-[11px] sm:text-xs py-2 px-3 text-center font-medium leading-relaxed">
         متجر Aira Pro - العلمة: توزيع قطع غيار ومستلزمات الطابعات لكافة ولايات الوطن (58 ولاية).
       </div>
 
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-black text-black tracking-wider font-[family-name:var(--font-audiowide)]">
-              AIRA PRO
-            </span>
-            <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold">B2B</span>
-          </div>
-
-          <div className="flex-1 max-w-2xl flex">
-            <input 
-              type="text" 
-              placeholder="البحث برقم القطعة (OEM Code) أو موديل الطابعة..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border-2 border-orange-300 rounded-r-md rounded-l-none px-4 py-2 focus:outline-none focus:border-orange-600 text-sm text-right"
-            />
-            <button className="bg-orange-600 text-white px-6 rounded-l-md rounded-r-none flex items-center justify-center hover:bg-orange-700 transition">
-              <Search className="w-5 h-5"/>
+      {/* الهيدر الرئيسي */}
+      <header className="bg-white shadow-sm sticky top-0 z-40 w-full overflow-hidden">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+          
+          {/* الشعار وزر القائمة للجوال */}
+          <div className="w-full md:w-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl sm:text-2xl font-black text-black tracking-wider font-[family-name:var(--font-audiowide)]">
+                AIRA PRO
+              </span>
+              <span className="text-[10px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold">B2B</span>
+            </div>
+            
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition"
+              aria-label="القائمة"
+            >
+              <Menu className="w-5 h-5"/>
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* شريط البحث */}
+          <div className="w-full md:flex-1 max-w-2xl flex">
+            <input 
+              type="text" 
+              placeholder="البحث برقم القطعة (SKU) أو موديل الطابعة..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border-2 border-orange-300 rounded-r-lg rounded-l-none px-3 py-2 focus:outline-none focus:border-orange-600 text-xs text-right"
+            />
+            <button className="bg-orange-600 text-white px-4 sm:px-6 rounded-l-lg rounded-r-none flex items-center justify-center hover:bg-orange-700 transition">
+              <Search className="w-4 h-4"/>
+            </button>
+          </div>
+
+          {/* الأزرار العلوية للشاشات الكبيرة */}
+          <div className="hidden md:flex items-center gap-2">
             <Link className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-orange-600 transition bg-gray-50 px-3 py-2 rounded-lg border border-gray-200" href="/">
               <Package className="w-4 h-4 text-orange-600"/>
               <span>الكتالوج</span>
@@ -229,25 +246,46 @@ export default function Home() {
               )}
             </button>
           </div>
+
+          {/* أزرار سريعة مصغرة خاصة بالهاتف مرتبة داخل الشاشة تماماً */}
+          <div className="flex md:hidden items-center justify-between w-full gap-1 pt-1 border-t">
+            <Link className="flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-gray-700 bg-gray-50 py-1.5 rounded border" href="/">
+              <Package className="w-3.5 h-3.5 text-orange-600"/> الكتالوج
+            </Link>
+            <button onClick={() => setIsShippingOpen(true)} className="flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-gray-700 bg-gray-50 py-1.5 rounded border">
+              <Truck className="w-3.5 h-3.5 text-orange-600"/> الشحن
+            </button>
+            <button onClick={() => setIsContactOpen(true)} className="flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-gray-700 bg-gray-50 py-1.5 rounded border">
+              <Phone className="w-3.5 h-3.5 text-green-600"/> اتصل
+            </button>
+            <button onClick={() => setIsCartOpen(true)} className="flex-1 flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-orange-600 py-1.5 rounded relative">
+              <ShoppingCart className="w-3.5 h-3.5"/> السلة
+              {totalItemsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-teal-900 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalItemsCount}
+                </span>
+              )}
+            </button>
+          </div>
+
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* المحتوى الرئيسي */}
+      <main className="max-w-7xl mx-auto px-4 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
         
+        {/* الشريط الجانبي للتصنيفات */}
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             
             <div className="font-extrabold text-gray-900 border-b pb-2 mb-3 text-sm flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-orange-600"/> التصنيفات
+                <Layers className="w-4 h-4 text-orange-600"/> التصنيفات والفلترة
               </span>
             </div>
 
-            <div 
-              className="mb-3 border-b pb-3"
-              onMouseEnter={() => setIsCategoriesOpen(true)}
-              onMouseLeave={() => setIsCategoriesOpen(false)}
-            >
+            {/* تصنيفات القطع */}
+            <div className="mb-4 border-b pb-3">
               <div 
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
                 className="flex items-center justify-between text-xs font-bold text-gray-700 cursor-pointer p-2 hover:bg-orange-50 rounded-lg transition select-none"
@@ -259,7 +297,7 @@ export default function Home() {
               </div>
 
               {isCategoriesOpen && (
-                <ul className="space-y-1 text-xs mt-2 pr-2 animate-fadeIn">
+                <ul className="space-y-1 text-xs mt-2 pr-2">
                   {categoriesList.map((cat) => (
                     <li 
                       key={cat.id} 
@@ -273,10 +311,8 @@ export default function Home() {
               )}
             </div>
 
-            <div 
-              onMouseEnter={() => setIsBrandsOpen(true)}
-              onMouseLeave={() => setIsBrandsOpen(false)}
-            >
+            {/* ماركات الطابعات */}
+            <div>
               <div 
                 onClick={() => setIsBrandsOpen(!isBrandsOpen)}
                 className="flex items-center justify-between text-xs font-bold text-gray-700 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition select-none"
@@ -288,7 +324,7 @@ export default function Home() {
               </div>
 
               {isBrandsOpen && (
-                <ul className="space-y-1 text-xs mt-2 pr-2 animate-fadeIn">
+                <ul className="space-y-1 text-xs mt-2 pr-2">
                   <li 
                     onClick={() => setSelectedBrand('All')}
                     className={`p-1.5 rounded-lg cursor-pointer font-medium transition ${selectedBrand === 'All' ? 'bg-black text-white font-bold' : 'hover:bg-gray-50 text-gray-600'}`}
@@ -312,15 +348,16 @@ export default function Home() {
           </div>
         </aside>
 
-        <section className="md:col-span-3">
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex justify-between items-center">
-            <span className="text-sm text-gray-500">عرض {filteredProducts.length} منتج</span>
-            <h1 className="font-bold text-base text-gray-800">قائمة قطع الغيار والمستهلكات المتوفرة</h1>
+        {/* شبكة المنتجات */}
+        <section className="lg:col-span-3">
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <span className="text-xs sm:text-sm text-gray-500">عرض {filteredProducts.length} منتج</span>
+            <h1 className="font-bold text-sm sm:text-base text-gray-800 text-center">قائمة قطع الغيار والمستهلكات المتوفرة</h1>
           </div>
 
           {filteredProducts.length === 0 ? (
             <div className="bg-white p-12 rounded-lg text-center text-gray-500 shadow-sm">
-              <p className="text-sm text-gray-500">لا توجد منتجات مطابقة لتحديداتك حالياً.</p>
+              <p className="text-xs sm:text-sm text-gray-500">لا توجد منتجات مطابقة لتحديداتك حالياً.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -339,7 +376,7 @@ export default function Home() {
                       <span className="text-[10px] bg-orange-100 text-orange-800 px-2 py-0.5 rounded font-bold">{product.category || 'General'}</span>
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono font-bold">SKU: {product.sku}</span>
                     </div>
-                    <h3 className="font-semibold text-sm mt-2 text-gray-800 line-clamp-2">{product.name}</h3>
+                    <h3 className="font-semibold text-xs sm:text-sm mt-2 text-gray-800 line-clamp-2">{product.name}</h3>
                     <div className="mt-3 space-y-1">
                       <div className="flex justify-between text-xs">
                         <span className="font-bold text-gray-800">{product.price_retail} دج</span>
@@ -368,6 +405,7 @@ export default function Home() {
         </section>
       </main>
 
+      {/* نافذة الاتصال */}
       {isContactOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" dir="rtl">
@@ -376,7 +414,7 @@ export default function Home() {
             </button>
             <div className="flex items-center gap-2 border-b pb-3 mb-4">
               <Phone className="w-6 h-6 text-orange-600"/>
-              <h3 className="font-bold text-lg text-gray-800">معلومات الاتصال (Aira Pro)</h3>
+              <h3 className="font-bold text-base sm:text-lg text-gray-800">معلومات الاتصال (Aira Pro)</h3>
             </div>
             <p className="text-xs text-gray-500 mb-4">تواصل معنا مباشرة عبر الهاتف، الواتساب، الويشات، أو صفحة الفيسبوك:</p>
 
@@ -446,13 +484,14 @@ export default function Home() {
         </div>
       )}
 
+      {/* نافذة QR Code */}
       {activeQrModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative text-center" dir="rtl">
             <button onClick={() => setActiveQrModal(null)} className="absolute top-4 left-4 text-gray-400 hover:text-gray-700">
               <X className="w-5 h-5"/>
             </button>
-            <h3 className="font-bold text-lg text-gray-800 mb-2">
+            <h3 className="font-bold text-base sm:text-lg text-gray-800 mb-2">
               {activeQrModal === 'whatsapp' ? 'مسح رمز الواتساب' : 'مسح رمز الويشات (WeChat)'}
             </h3>
             <p className="text-xs text-gray-500 mb-4">
@@ -473,7 +512,7 @@ export default function Home() {
                     {CONTACT_CONFIG.wechatId}
                   </div>
                   <p className="text-[11px] text-gray-600 text-center leading-relaxed">
-                    افتح تطبيق WeChat وابحث عن المعرف أو امسح كود التطبيق مباشرة.
+                    فحّص تطبيق WeChat وابحث عن المعرف أو اضغط لنسخه.
                   </p>
                 </div>
               )}
@@ -489,13 +528,14 @@ export default function Home() {
         </div>
       )}
 
+      {/* سلة الطلبات */}
       {isCartOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
-          <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6">
+          <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-4 sm:p-6">
             <div className="flex items-center justify-between border-b pb-4">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5 text-orange-600"/>
-                <h2 className="font-bold text-base text-gray-800">سلة الطلبات ({totalItemsCount})</h2>
+                <h2 className="font-bold text-sm sm:text-base text-gray-800">سلة الطلبات ({totalItemsCount})</h2>
               </div>
               <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-gray-700">
                 <X className="w-5 h-5"/>
@@ -537,13 +577,13 @@ export default function Home() {
 
             {cart.length > 0 && (
               <div className="border-t pt-4 space-y-3">
-                <div className="flex justify-between items-center text-base font-bold text-gray-900 border-t pt-2">
+                <div className="flex justify-between items-center text-sm sm:text-base font-bold text-gray-900 border-t pt-2">
                   <span>المبلغ الإجمالي:</span>
                   <span>{totalCartAmount} دج</span>
                 </div>
                 <button 
                   onClick={() => { alert('تم تسجيل الطلب بنجاح.'); setCart([]); setIsCartOpen(false); }}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition text-sm shadow"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition text-xs sm:text-sm shadow"
                 >
                   إتمام الطلب
                 </button>
@@ -553,6 +593,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* نافذة الشحن */}
       {isShippingOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
@@ -561,7 +602,7 @@ export default function Home() {
             </button>
             <div className="flex items-center gap-2 border-b pb-3 mb-4">
               <Truck className="w-5 h-5 text-orange-600"/>
-              <h3 className="font-bold text-base text-gray-800">حساب تكلفة التوصيل (58 ولاية)</h3>
+              <h3 className="font-bold text-sm sm:text-base text-gray-800">حساب تكلفة التوصيل (58 ولاية)</h3>
             </div>
             <div className="space-y-4">
               <div>
@@ -592,9 +633,7 @@ export default function Home() {
                   </button>
                   <button 
                     type="button"
-                    onClick={() => {
-                      setShippingType('desk');
-                    }}
+                    onClick={() => setShippingType('desk')}
                     className={`p-2 rounded-lg border text-xs font-semibold transition ${shippingType === 'desk' ? 'border-orange-600 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600'}`}
                   >
                     للمكتب (Stop Desk)
